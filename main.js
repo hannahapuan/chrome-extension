@@ -76,22 +76,25 @@ function buildJQL(callback) {
 }
 function createHTMLElementResult(response) {
   var issues = response.issues;
-  var list = document.createElement('ul');
+
+  var table = document.createElement('table');
+  var header = document.createElement('tr');
+  header.innerHTML = `<th>Status</th><th>Key</th><th>Summary</th>`;
+  table.appendChild(header);
+
+  var summary = document.createElement('td');
+  var key = document.createElement('td');
+  var status = document.createElement('td');
   for (var index = 0; index < issues.length; index++) {
-    var html = issues[index].summary;
-    var updated = issues[index].id;
-    var item = document.createElement('li');
-    item.innerHTML = new Date(updated).toLocaleString() + " - " + domify(html);
-    list.appendChild(item);
+    var row = document.createElement('tr');
+    status.innerHTML = `<img src="${issues[index].fields.status.iconUrl}"/>`;
+    summary.innerHTML = issues[index].fields.summary.length > 75 ? `${issues[index].fields.summary.substring(0, 75)}...` : issues[index].fields.summary;
+    key.innerHTML = issues[index].key;
+    row.innerHTML = `${status.outerHTML} ${key.outerHTML} ${summary.outerHTML}`;
+    table.appendChild(row);
   }
 
-  // 
-  // Create HTML output to display the search results.
-  // results.json in the "json_results" folder contains a sample of the API response
-  // hint: you may run the application as well if you fix the bug. 
-  // 
-
-  return list;
+  return table;
 
 }
 
@@ -130,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('status').hidden = false;
 
           var jsonResultDiv = document.getElementById('query-result');
-          jsonResultDiv.innerHTML = return_val;
+          jsonResultDiv.innerHTML = return_val.outerHTML;
           jsonResultDiv.hidden = false;
 
         }, function (errorMessage) {
