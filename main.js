@@ -173,6 +173,7 @@ function getJiraInfo() {
         var header = document.createElement('tr');
         var dateHeader = document.createElement('th');
         var activityHeader = document.createElement('th');
+        // build headers
         dateHeader.innerHTML = "Date";
         activityHeader.innerHTML = "Activity";
         header.innerHTML = `${dateHeader.outerHTML} ${activityHeader.outerHTML}`;
@@ -181,6 +182,7 @@ function getJiraInfo() {
         var date = document.createElement('td');
         var activity = document.createElement('td');
 
+        //build rows
         for (var index = 0; index < entries.length; index++) {
           var row = document.createElement('tr');
           var html = entries[index].getElementsByTagName("title")[0].innerHTML;
