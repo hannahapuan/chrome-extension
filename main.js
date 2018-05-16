@@ -54,8 +54,6 @@ function make_request(url, responseType) {
   });
 }
 
-
-
 function loadOptions() {
   chrome.storage.sync.get({
     project: 'Sunshine',
@@ -66,6 +64,12 @@ function loadOptions() {
   });
 }
 function buildJQL(callback) {
+  if (document.getElementById("daysPast").value <= 0) {
+    document.getElementById('status').innerHTML = 'ERROR. Enter a valid value for days';
+    document.getElementById('status').hidden = false;
+    return;
+  }
+
   var callbackBase = "https://jira.secondlife.com/rest/api/2/search?jql=";
   var project = document.getElementById("project").value;
   var status = document.getElementById("statusSelect").value;
@@ -74,22 +78,35 @@ function buildJQL(callback) {
   fullCallbackUrl += `project=${project}+and+status=${status}+and+status+changed+to+${status}+before+-${inStatusFor}d&fields=id,status,key,assignee,summary&maxresults=100`;
   callback(fullCallbackUrl);
 }
+
+// Render Ticket Status Query
 function createHTMLElementResult(response) {
+  // parse issues
   var issues = response.issues;
 
+  // create table header
   var table = document.createElement('table');
   var header = document.createElement('tr');
-  header.innerHTML = `<th>Status</th><th>Key</th><th>Summary</th>`;
+  var statusHeader = document.createElement('th');
+  var keyHeader = document.createElement('th');
+  var summaryHeader = document.createElement('th');
+  statusHeader.innerHTML = "Status";
+  keyHeader.innerHTML = "Key";
+  summaryHeader.innerHTML = "Summary";
+  header.innerHTML = `${statusHeader.outerHTML} ${keyHeader.outerHTML} ${summaryHeader.outerHTML}`;
   table.appendChild(header);
 
+  // create columns
   var summary = document.createElement('td');
   var key = document.createElement('td');
   var status = document.createElement('td');
+
+  // build table
   for (var index = 0; index < issues.length; index++) {
     var row = document.createElement('tr');
     status.innerHTML = `<img src="${issues[index].fields.status.iconUrl}"/>`;
     summary.innerHTML = issues[index].fields.summary.length > 75 ? `${issues[index].fields.summary.substring(0, 75)}...` : issues[index].fields.summary;
-    key.innerHTML = issues[index].key;
+    key.innerHTML = `<a href="https://jira.secondlife.com/browse/${issues[index].key}" target="_blank">${issues[index].key}</a>`;
     row.innerHTML = `${status.outerHTML} ${key.outerHTML} ${summary.outerHTML}`;
     table.appendChild(row);
   }
@@ -113,8 +130,7 @@ async function checkProjectExists() {
   }
 }
 
-// Setup
-document.addEventListener('DOMContentLoaded', function () {
+function getJiraInfo() {
   // if logged in, setup listeners
   checkProjectExists().then(function () {
     //load saved options
@@ -153,19 +169,30 @@ document.addEventListener('DOMContentLoaded', function () {
         // render result
         var feed = xmlDoc.getElementsByTagName('feed');
         var entries = feed[0].getElementsByTagName("entry");
-        var list = document.createElement('ul');
+        var table = document.createElement('table');
+        var header = document.createElement('tr');
+        var dateHeader = document.createElement('th');
+        var activityHeader = document.createElement('th');
+        dateHeader.innerHTML = "Date";
+        activityHeader.innerHTML = "Activity";
+        header.innerHTML = `${dateHeader.outerHTML} ${activityHeader.outerHTML}`;
+        table.appendChild(header);
+
+        var date = document.createElement('td');
+        var activity = document.createElement('td');
 
         for (var index = 0; index < entries.length; index++) {
+          var row = document.createElement('tr');
           var html = entries[index].getElementsByTagName("title")[0].innerHTML;
           var updated = entries[index].getElementsByTagName("updated")[0].innerHTML;
-          var item = document.createElement('li');
-          item.innerHTML = new Date(updated).toLocaleString() + " - " + domify(html);
-          list.appendChild(item);
+
+          row.innerHTML = `<td>${new Date(updated).toLocaleString()}</td> <td>${domify(html)}</td>`;
+          table.appendChild(row);
         }
 
         var feedResultDiv = document.getElementById('query-result');
-        if (list.childNodes.length > 0) {
-          feedResultDiv.innerHTML = list.outerHTML;
+        if (table.childNodes.length > 0) {
+          feedResultDiv.innerHTML = table.outerHTML;
         } else {
           document.getElementById('status').innerHTML = 'There are no activity results.';
           document.getElementById('status').hidden = false;
@@ -183,4 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('status').innerHTML = 'ERROR. ' + errorMessage;
     document.getElementById('status').hidden = false;
   });
-});
+}
+
+// Setup
+document.addEventListener('DOMContentLoaded', getJiraInfo);
